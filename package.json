@@ -1,11 +1,11 @@
 {
-  "name": "@parrotjs/component-utils",
-  "version": "0.0.2",
+  "name": "@parrotjs/dom-utils",
+  "version": "0.0.1",
   "description": "",
-  "main": "dist/parrotcomponentutils.cjs.js",
-  "module": "dist/parrotcomponentutils.esm.js",
-  "umd": "dist/parrotcomponentutils.umd.js",
-  "umdName": "ParrotCompUtils",
+  "main": "dist/parrotdomutils.cjs.js",
+  "module": "dist/parrotdomutils.esm.js",
+  "umd": "dist/parrotdomutils.umd.js",
+  "umdName": "ParrotDomUtils",
   "types": "dist/types",
   "scripts": {
     "prebuild": "rimraf dist",
