@@ -1,5 +1,5 @@
 //获取window对象
-export default function getWindow(node){
+export default function getWindow(node:any){
     if(node===null){
         return window;
     }
