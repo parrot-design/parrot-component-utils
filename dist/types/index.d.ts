@@ -10,3 +10,4 @@ export { default as getComputedStyle } from './getComputedStyle';
 export { default as getDocumentElement } from './getDocumentElement';
 export { default as getNodeName } from './getNodeName';
 export { default as getParentNode } from './getParentNode';
+export { default as getOffsetParent } from './getOffsetParent';

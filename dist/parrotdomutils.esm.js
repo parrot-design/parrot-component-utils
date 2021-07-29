@@ -54,13 +54,13 @@ function getParentNode(element) {
 }
 
 //返回一个包含元素所有 CSS 属性值的对象
-function getComputedStyle(element) {
+function getComputedStyle$1(element) {
     return getWindow(element).getComputedStyle(element);
 }
 
 //判断节点是否滚动
 function isScrollParent(element) {
-    const { overflow, overflowX, overflowY } = getComputedStyle(element);
+    const { overflow, overflowX, overflowY } = getComputedStyle$1(element);
     return /auto|scroll|overlay|hidden/.test(overflow + overflowY + overflowX);
 }
 
@@ -90,4 +90,64 @@ function listScrollParents(element, list = []) {
         : updatedList.concat(listScrollParents(getParentNode(target)));
 }
 
-export { getComputedStyle, getDocumentElement, getNodeName, getParentNode, getScrollParent, getWindow, isElement, isHTMLElement, isScrollParent, isShadowRoot, listScrollParents, reflow };
+function isTableElement(element) {
+    return ['table', 'td', 'th'].indexOf(getNodeName(element)) >= 0;
+}
+
+function getContainingBlock(element) {
+    const isFirefox = navigator.userAgent.toLowerCase().indexOf('firefox') !== -1;
+    const isIE = navigator.userAgent.indexOf('Trident') !== -1;
+    if (isIE && isHTMLElement(element)) {
+        // In IE 9, 10 and 11 fixed elements containing block is always established by the viewport
+        const elementCss = getComputedStyle(element);
+        if (elementCss.position === 'fixed') {
+            return null;
+        }
+    }
+    let currentNode = getParentNode(element);
+    while (isHTMLElement(currentNode) &&
+        ['html', 'body'].indexOf(getNodeName(currentNode)) < 0) {
+        const css = getComputedStyle(currentNode);
+        // This is non-exhaustive but covers the most common CSS properties that
+        // create a containing block.
+        // https://developer.mozilla.org/en-US/docs/Web/CSS/Containing_block#identifying_the_containing_block
+        if (css.transform !== 'none' ||
+            css.perspective !== 'none' ||
+            css.contain === 'paint' ||
+            ['transform', 'perspective'].indexOf(css.willChange) !== -1 ||
+            (isFirefox && css.willChange === 'filter') ||
+            (isFirefox && css.filter && css.filter !== 'none')) {
+            return currentNode;
+        }
+        else {
+            currentNode = currentNode.parentNode;
+        }
+    }
+    return null;
+}
+function getTrueOffsetParent(element) {
+    if (!isHTMLElement(element) ||
+        getComputedStyle(element).position === 'fixed') {
+        return null;
+    }
+    return element.offsetParent;
+}
+//获取最近的祖先定位元素。处理一些边缘情况，
+function getOffsetParent(element) {
+    const window = getWindow(element);
+    let offsetParent = getTrueOffsetParent(element);
+    while (offsetParent &&
+        isTableElement(offsetParent) &&
+        getComputedStyle(offsetParent).position === 'static') {
+        offsetParent = getTrueOffsetParent(offsetParent);
+    }
+    if (offsetParent &&
+        (getNodeName(offsetParent) === 'html' ||
+            (getNodeName(offsetParent) === 'body' &&
+                getComputedStyle(offsetParent).position === 'static'))) {
+        return window;
+    }
+    return offsetParent || getContainingBlock(element);
+}
+
+export { getComputedStyle$1 as getComputedStyle, getDocumentElement, getNodeName, getOffsetParent, getParentNode, getScrollParent, getWindow, isElement, isHTMLElement, isScrollParent, isShadowRoot, listScrollParents, reflow };
