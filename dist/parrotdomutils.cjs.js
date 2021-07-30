@@ -349,14 +349,62 @@ function getLayoutRect(element) {
     };
 }
 
+function getHTMLElementScroll(element) {
+    return {
+        scrollLeft: element.scrollLeft,
+        scrollTop: element.scrollTop,
+    };
+}
+
+function getNodeScroll(node) {
+    if (node === getWindow(node) || !isHTMLElement(node)) {
+        return getWindowScroll(node);
+    }
+    else {
+        return getHTMLElementScroll(node);
+    }
+}
+
+function getCompositeRect(elementOrVirtualElement, offsetParent, isFixed = false) {
+    const documentElement = getDocumentElement(offsetParent);
+    const rect = getBoundingClientRect(elementOrVirtualElement);
+    const isOffsetParentAnElement = isHTMLElement(offsetParent);
+    let scroll = { scrollLeft: 0, scrollTop: 0 };
+    let offsets = { x: 0, y: 0 };
+    if (isOffsetParentAnElement || (!isOffsetParentAnElement && !isFixed)) {
+        if (getNodeName(offsetParent) !== 'body' ||
+            // https://github.com/popperjs/popper-core/issues/1078
+            isScrollParent(documentElement)) {
+            scroll = getNodeScroll(offsetParent);
+        }
+        if (isHTMLElement(offsetParent)) {
+            offsets = getBoundingClientRect(offsetParent);
+            offsets.x += offsetParent.clientLeft;
+            offsets.y += offsetParent.clientTop;
+        }
+        else if (documentElement) {
+            offsets.x = getWindowScrollBarX(documentElement);
+        }
+    }
+    return {
+        x: rect.left + scroll.scrollLeft - offsets.x,
+        y: rect.top + scroll.scrollTop - offsets.y,
+        width: rect.width,
+        height: rect.height,
+    };
+}
+
 exports.contains = contains;
 exports.getBoundingClientRect = getBoundingClientRect;
 exports.getClippingRect = getClippingRect;
+exports.getCompositeRect = getCompositeRect;
 exports.getComputedStyle = getComputedStyle$1;
 exports.getDocumentElement = getDocumentElement;
 exports.getDocumentRect = getDocumentRect;
+exports.getHTMLElementScroll = getHTMLElementScroll;
 exports.getLayoutRect = getLayoutRect;
 exports.getNodeName = getNodeName;
+exports.getNodeScroll = getNodeScroll;
 exports.getOffsetParent = getOffsetParent;
 exports.getParentNode = getParentNode;
 exports.getScrollParent = getScrollParent;

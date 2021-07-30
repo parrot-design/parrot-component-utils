@@ -345,4 +345,49 @@ function getLayoutRect(element) {
     };
 }
 
-export { contains, getBoundingClientRect, getClippingRect, getComputedStyle$1 as getComputedStyle, getDocumentElement, getDocumentRect, getLayoutRect, getNodeName, getOffsetParent, getParentNode, getScrollParent, getViewportRect, getWindow, getWindowScroll, getWindowScrollBarX, isElement, isHTMLElement, isScrollParent, isShadowRoot, listScrollParents, rectToClientRect, reflow };
+function getHTMLElementScroll(element) {
+    return {
+        scrollLeft: element.scrollLeft,
+        scrollTop: element.scrollTop,
+    };
+}
+
+function getNodeScroll(node) {
+    if (node === getWindow(node) || !isHTMLElement(node)) {
+        return getWindowScroll(node);
+    }
+    else {
+        return getHTMLElementScroll(node);
+    }
+}
+
+function getCompositeRect(elementOrVirtualElement, offsetParent, isFixed = false) {
+    const documentElement = getDocumentElement(offsetParent);
+    const rect = getBoundingClientRect(elementOrVirtualElement);
+    const isOffsetParentAnElement = isHTMLElement(offsetParent);
+    let scroll = { scrollLeft: 0, scrollTop: 0 };
+    let offsets = { x: 0, y: 0 };
+    if (isOffsetParentAnElement || (!isOffsetParentAnElement && !isFixed)) {
+        if (getNodeName(offsetParent) !== 'body' ||
+            // https://github.com/popperjs/popper-core/issues/1078
+            isScrollParent(documentElement)) {
+            scroll = getNodeScroll(offsetParent);
+        }
+        if (isHTMLElement(offsetParent)) {
+            offsets = getBoundingClientRect(offsetParent);
+            offsets.x += offsetParent.clientLeft;
+            offsets.y += offsetParent.clientTop;
+        }
+        else if (documentElement) {
+            offsets.x = getWindowScrollBarX(documentElement);
+        }
+    }
+    return {
+        x: rect.left + scroll.scrollLeft - offsets.x,
+        y: rect.top + scroll.scrollTop - offsets.y,
+        width: rect.width,
+        height: rect.height,
+    };
+}
+
+export { contains, getBoundingClientRect, getClippingRect, getCompositeRect, getComputedStyle$1 as getComputedStyle, getDocumentElement, getDocumentRect, getHTMLElementScroll, getLayoutRect, getNodeName, getNodeScroll, getOffsetParent, getParentNode, getScrollParent, getViewportRect, getWindow, getWindowScroll, getWindowScrollBarX, isElement, isHTMLElement, isScrollParent, isShadowRoot, listScrollParents, rectToClientRect, reflow };

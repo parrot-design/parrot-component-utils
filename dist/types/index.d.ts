@@ -20,3 +20,6 @@ export { default as getWindowScroll } from './getWindowScroll';
 export { default as getWindowScrollBarX } from './getWindowScrollBarX';
 export { default as rectToClientRect } from './rectToClientRect';
 export { default as getLayoutRect } from './getLayoutRect';
+export { default as getCompositeRect } from './getCompositeRect';
+export { default as getHTMLElementScroll } from './getHTMLElementScroll';
+export { default as getNodeScroll } from './getNodeScroll';
