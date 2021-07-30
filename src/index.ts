@@ -19,3 +19,4 @@ export { default as getViewportRect } from './getViewportRect';
 export { default as getWindowScroll } from './getWindowScroll';
 export { default as getWindowScrollBarX } from './getWindowScrollBarX';
 export { default as rectToClientRect } from './rectToClientRect';
+export { default as getLayoutRect } from './getLayoutRect';

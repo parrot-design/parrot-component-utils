@@ -327,12 +327,35 @@ function getClippingRect(element, boundary, rootBoundary) {
     return clippingRect;
 }
 
+// Returns the layout rect of an element relative to its offsetParent. Layout
+// means it doesn't take into account transforms.
+function getLayoutRect(element) {
+    const clientRect = getBoundingClientRect(element);
+    // Use the clientRect sizes if it's not been transformed.
+    // Fixes https://github.com/popperjs/popper-core/issues/1223
+    let width = element.offsetWidth;
+    let height = element.offsetHeight;
+    if (Math.abs(clientRect.width - width) <= 1) {
+        width = clientRect.width;
+    }
+    if (Math.abs(clientRect.height - height) <= 1) {
+        height = clientRect.height;
+    }
+    return {
+        x: element.offsetLeft,
+        y: element.offsetTop,
+        width,
+        height,
+    };
+}
+
 exports.contains = contains;
 exports.getBoundingClientRect = getBoundingClientRect;
 exports.getClippingRect = getClippingRect;
 exports.getComputedStyle = getComputedStyle$1;
 exports.getDocumentElement = getDocumentElement;
 exports.getDocumentRect = getDocumentRect;
+exports.getLayoutRect = getLayoutRect;
 exports.getNodeName = getNodeName;
 exports.getOffsetParent = getOffsetParent;
 exports.getParentNode = getParentNode;
