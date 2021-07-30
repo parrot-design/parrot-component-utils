@@ -154,16 +154,197 @@ function getOffsetParent(element) {
     return offsetParent || getContainingBlock(element);
 }
 
+function getBoundingClientRect(element) {
+    const rect = element.getBoundingClientRect();
+    return {
+        width: rect.width,
+        height: rect.height,
+        top: rect.top,
+        right: rect.right,
+        bottom: rect.bottom,
+        left: rect.left,
+        x: rect.left,
+        y: rect.top,
+    };
+}
+
+//该元素是否包含另一个元素
+function contains(parent, child) {
+    //方法返回上下文中的根节点
+    const rootNode = child.getRootNode && child.getRootNode();
+    // First, attempt with faster native method
+    if (parent.contains(child)) {
+        return true;
+    }
+    // then fallback to custom implementation with Shadow DOM support
+    else if (rootNode && isShadowRoot(rootNode)) {
+        let next = child;
+        do {
+            if (next && parent.isSameNode(next)) {
+                return true;
+            }
+            // $FlowFixMe[prop-missing]: need a better way to handle this...
+            next = next.parentNode || next.host;
+        } while (next);
+    }
+    // Give up, the result is false
+    return false;
+}
+
+function getWindowScroll(node) {
+    const win = getWindow(node);
+    //pageXOffset 和 pageYOffset 属性返回文档在窗口左上角水平和垂直方向滚动的像素。
+    const scrollLeft = win.pageXOffset;
+    const scrollTop = win.pageYOffset;
+    return {
+        scrollLeft,
+        scrollTop,
+    };
+}
+
+function getWindowScrollBarX(element) {
+    return (getBoundingClientRect(getDocumentElement(element)).left +
+        getWindowScroll(element).scrollLeft);
+}
+
+function getViewportRect(element) {
+    const win = getWindow(element);
+    const html = getDocumentElement(element);
+    const visualViewport = win.visualViewport;
+    let width = html.clientWidth;
+    let height = html.clientHeight;
+    let x = 0;
+    let y = 0;
+    // NB: This isn't supported on iOS <= 12. If the keyboard is open, the popper
+    // can be obscured underneath it.
+    // Also, `html.clientHeight` adds the bottom bar height in Safari iOS, even
+    // if it isn't open, so if this isn't available, the popper will be detected
+    // to overflow the bottom of the screen too early.
+    if (visualViewport) {
+        width = visualViewport.width;
+        height = visualViewport.height;
+        // Uses Layout Viewport (like Chrome; Safari does not currently)
+        // In Chrome, it returns a value very close to 0 (+/-) but contains rounding
+        // errors due to floating point numbers, so we need to check precision.
+        // Safari returns a number <= 0, usually < -1 when pinch-zoomed
+        // Feature detection fails in mobile emulation mode in Chrome.
+        // Math.abs(win.innerWidth / visualViewport.scale - visualViewport.width) <
+        // 0.001
+        // Fallback here: "Not Safari" userAgent
+        if (!/^((?!chrome|android).)*safari/i.test(navigator.userAgent)) {
+            x = visualViewport.offsetLeft;
+            y = visualViewport.offsetTop;
+        }
+    }
+    return {
+        width,
+        height,
+        x: x + getWindowScrollBarX(element),
+        y,
+    };
+}
+
+const max$1 = Math.max;
+// Gets the entire size of the scrollable document area, even extending outside
+// of the `<html>` and `<body>` rect bounds if horizontally scrollable
+function getDocumentRect(element) {
+    var _a;
+    const html = getDocumentElement(element);
+    const winScroll = getWindowScroll(element);
+    const body = (_a = element.ownerDocument) === null || _a === void 0 ? void 0 : _a.body;
+    const width = max$1(html.scrollWidth, html.clientWidth, body ? body.scrollWidth : 0, body ? body.clientWidth : 0);
+    const height = max$1(html.scrollHeight, html.clientHeight, body ? body.scrollHeight : 0, body ? body.clientHeight : 0);
+    let x = -winScroll.scrollLeft + getWindowScrollBarX(element);
+    const y = -winScroll.scrollTop;
+    if (getComputedStyle$1(body || html).direction === 'rtl') {
+        x += max$1(html.clientWidth, body ? body.clientWidth : 0) - width;
+    }
+    return { width, height, x, y };
+}
+
+function rectToClientRect(rect) {
+    return Object.assign(Object.assign({}, rect), { left: rect.x, top: rect.y, right: rect.x + rect.width, bottom: rect.y + rect.height });
+}
+
+const max = Math.max;
+const min = Math.min;
+function getInnerBoundingClientRect(element) {
+    const rect = getBoundingClientRect(element);
+    rect.top = rect.top + element.clientTop;
+    rect.left = rect.left + element.clientLeft;
+    rect.bottom = rect.top + element.clientHeight;
+    rect.right = rect.left + element.clientWidth;
+    rect.width = element.clientWidth;
+    rect.height = element.clientHeight;
+    rect.x = rect.left;
+    rect.y = rect.top;
+    return rect;
+}
+function getClientRectFromMixedType(element, clippingParent) {
+    return clippingParent === 'viewport'
+        ? rectToClientRect(getViewportRect(element))
+        : isHTMLElement(clippingParent)
+            ? getInnerBoundingClientRect(clippingParent)
+            : rectToClientRect(getDocumentRect(getDocumentElement(element)));
+}
+// A "clipping parent" is an overflowable container with the characteristic of
+// clipping (or hiding) overflowing elements with a position different from
+// `initial`
+function getClippingParents(element) {
+    const clippingParents = listScrollParents(getParentNode(element));
+    const canEscapeClipping = ['absolute', 'fixed'].indexOf(getComputedStyle$1(element).position) >= 0;
+    const clipperElement = canEscapeClipping && isHTMLElement(element)
+        ? getOffsetParent(element)
+        : element;
+    if (!isElement(clipperElement)) {
+        return [];
+    }
+    // $FlowFixMe[incompatible-return]: https://github.com/facebook/flow/issues/1414
+    return clippingParents.filter((clippingParent) => isElement(clippingParent) &&
+        contains(clippingParent, clipperElement) &&
+        getNodeName(clippingParent) !== 'body');
+}
+// Gets the maximum area that the element is visible in due to any number of
+// clipping parents
+function getClippingRect(element, boundary, rootBoundary) {
+    const mainClippingParents = boundary === 'clippingParents'
+        ? getClippingParents(element)
+        : [].concat(boundary);
+    const clippingParents = [...mainClippingParents, rootBoundary];
+    const firstClippingParent = clippingParents[0];
+    const clippingRect = clippingParents.reduce((accRect, clippingParent) => {
+        const rect = getClientRectFromMixedType(element, clippingParent);
+        accRect.top = max(rect.top, accRect.top);
+        accRect.right = min(rect.right, accRect.right);
+        accRect.bottom = min(rect.bottom, accRect.bottom);
+        accRect.left = max(rect.left, accRect.left);
+        return accRect;
+    }, getClientRectFromMixedType(element, firstClippingParent));
+    clippingRect.width = clippingRect.right - clippingRect.left;
+    clippingRect.height = clippingRect.bottom - clippingRect.top;
+    clippingRect.x = clippingRect.left;
+    clippingRect.y = clippingRect.top;
+    return clippingRect;
+}
+
+exports.contains = contains;
+exports.getBoundingClientRect = getBoundingClientRect;
+exports.getClippingRect = getClippingRect;
 exports.getComputedStyle = getComputedStyle$1;
 exports.getDocumentElement = getDocumentElement;
+exports.getDocumentRect = getDocumentRect;
 exports.getNodeName = getNodeName;
 exports.getOffsetParent = getOffsetParent;
 exports.getParentNode = getParentNode;
 exports.getScrollParent = getScrollParent;
+exports.getViewportRect = getViewportRect;
 exports.getWindow = getWindow;
+exports.getWindowScroll = getWindowScroll;
+exports.getWindowScrollBarX = getWindowScrollBarX;
 exports.isElement = isElement;
 exports.isHTMLElement = isHTMLElement;
 exports.isScrollParent = isScrollParent;
 exports.isShadowRoot = isShadowRoot;
 exports.listScrollParents = listScrollParents;
+exports.rectToClientRect = rectToClientRect;
 exports.reflow = reflow;
