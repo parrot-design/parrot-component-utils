@@ -1,6 +1,6 @@
 {
   "name": "@parrotjs/dom-utils",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "",
   "main": "dist/parrotdomutils.cjs.js",
   "module": "dist/parrotdomutils.esm.js",
