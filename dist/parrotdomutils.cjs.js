@@ -394,6 +394,18 @@ function getCompositeRect(elementOrVirtualElement, offsetParent, isFixed = false
     };
 }
 
+function isHidden(element) {
+    if (!element)
+        return false;
+    const style = getComputedStyle$1(element);
+    const hidden = style.display === 'none';
+    // offsetParent在以下情况下返回null:
+    // 1。元素或其父元素的display属性设置为none。
+    // 2。元素的position属性设置为fixed
+    const parentHidden = element.offsetParent === null && style.position !== 'fixed';
+    return hidden || parentHidden;
+}
+
 exports.contains = contains;
 exports.getBoundingClientRect = getBoundingClientRect;
 exports.getClippingRect = getClippingRect;
@@ -414,6 +426,7 @@ exports.getWindowScroll = getWindowScroll;
 exports.getWindowScrollBarX = getWindowScrollBarX;
 exports.isElement = isElement;
 exports.isHTMLElement = isHTMLElement;
+exports.isHidden = isHidden;
 exports.isScrollParent = isScrollParent;
 exports.isShadowRoot = isShadowRoot;
 exports.listScrollParents = listScrollParents;
