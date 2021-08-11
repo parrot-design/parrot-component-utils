@@ -402,4 +402,21 @@ function isHidden(element) {
     return hidden || parentHidden;
 }
 
-export { contains, getBoundingClientRect, getClippingRect, getCompositeRect, getComputedStyle$1 as getComputedStyle, getDocumentElement, getDocumentRect, getHTMLElementScroll, getLayoutRect, getNodeName, getNodeScroll, getOffsetParent, getParentNode, getScrollParent, getViewportRect, getWindow, getWindowScroll, getWindowScrollBarX, isElement, isHTMLElement, isHidden, isScrollParent, isShadowRoot, listScrollParents, rectToClientRect, reflow };
+function canUseDom() {
+    return !!(typeof window !== 'undefined' &&
+        window.document &&
+        window.document.createElement);
+}
+
+const canUseDocElement = () => canUseDom() && window.document.documentElement;
+
+const isStyleSupport = (styleName) => {
+    if (canUseDocElement()) {
+        const styleNameList = Array.isArray(styleName) ? styleName : [styleName];
+        const { documentElement } = window.document;
+        return styleNameList.some(name => name in documentElement.style);
+    }
+    return false;
+};
+
+export { canUseDocElement, canUseDom, contains, getBoundingClientRect, getClippingRect, getCompositeRect, getComputedStyle$1 as getComputedStyle, getDocumentElement, getDocumentRect, getHTMLElementScroll, getLayoutRect, getNodeName, getNodeScroll, getOffsetParent, getParentNode, getScrollParent, getViewportRect, getWindow, getWindowScroll, getWindowScrollBarX, isElement, isHTMLElement, isHidden, isScrollParent, isShadowRoot, isStyleSupport, listScrollParents, rectToClientRect, reflow };

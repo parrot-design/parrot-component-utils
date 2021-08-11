@@ -406,6 +406,25 @@ function isHidden(element) {
     return hidden || parentHidden;
 }
 
+function canUseDom() {
+    return !!(typeof window !== 'undefined' &&
+        window.document &&
+        window.document.createElement);
+}
+
+const canUseDocElement = () => canUseDom() && window.document.documentElement;
+
+const isStyleSupport = (styleName) => {
+    if (canUseDocElement()) {
+        const styleNameList = Array.isArray(styleName) ? styleName : [styleName];
+        const { documentElement } = window.document;
+        return styleNameList.some(name => name in documentElement.style);
+    }
+    return false;
+};
+
+exports.canUseDocElement = canUseDocElement;
+exports.canUseDom = canUseDom;
 exports.contains = contains;
 exports.getBoundingClientRect = getBoundingClientRect;
 exports.getClippingRect = getClippingRect;
@@ -429,6 +448,7 @@ exports.isHTMLElement = isHTMLElement;
 exports.isHidden = isHidden;
 exports.isScrollParent = isScrollParent;
 exports.isShadowRoot = isShadowRoot;
+exports.isStyleSupport = isStyleSupport;
 exports.listScrollParents = listScrollParents;
 exports.rectToClientRect = rectToClientRect;
 exports.reflow = reflow;

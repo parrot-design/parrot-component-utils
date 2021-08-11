@@ -24,3 +24,6 @@ export { default as getCompositeRect } from './getCompositeRect';
 export { default as getHTMLElementScroll } from './getHTMLElementScroll';
 export { default as getNodeScroll } from './getNodeScroll';
 export { default as isHidden } from './isHidden';
+export { default as isStyleSupport } from './isStyleSupport';
+export { default as canUseDom } from './canUseDom';
+export { default as canUseDocElement } from './canUseDocElement';
